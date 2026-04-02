@@ -5,20 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IoT Sensor Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #070b14;
-      --card: #0d1424;
-      --card2: #111827;
-      --border: #1f2d45;
-      --blue: #3b82f6;
-      --orange: #f97316;
-      --cyan: #06b6d4;
-      --purple: #8b5cf6;
+      --bg: #f0f4ff;
+      --bg2: #e8eeff;
+      --card: #ffffff;
+      --border: #dde3f5;
+      --shadow: 0 4px 24px rgba(99,120,210,0.10);
+      --shadow-hover: 0 8px 32px rgba(99,120,210,0.18);
+      --blue: #4f7cff;
+      --orange: #ff7043;
+      --cyan: #00bcd4;
+      --purple: #9c27b0;
       --green: #22c55e;
-      --text: #e2e8f0;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #1e293b;
       --muted: #64748b;
+      --light: #94a3b8;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -26,174 +31,188 @@
       color: var(--text);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* Background grid */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
     }
 
     /* Header */
     header {
-      position: relative;
-      z-index: 10;
+      background: linear-gradient(135deg, #4f7cff 0%, #7c3aed 100%);
+      padding: 0 40px;
+      height: 64px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 18px 40px;
-      background: rgba(13,20,36,0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(79,124,255,0.35);
     }
     .logo { display: flex; align-items: center; gap: 12px; }
     .logo-icon {
-      width: 38px; height: 38px;
-      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.2);
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.1rem;
     }
-    .logo h1 { font-size: 1.2rem; font-weight: 700; color: var(--text); }
-    .logo p { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
-    .header-right { display: flex; align-items: center; gap: 16px; }
+    .logo h1 { font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .logo p { font-size: 0.7rem; color: rgba(255,255,255,0.7); }
+    .header-right { display: flex; align-items: center; gap: 14px; }
     .badge {
       display: flex; align-items: center; gap: 6px;
-      background: rgba(34,197,94,0.1);
-      border: 1px solid rgba(34,197,94,0.3);
-      border-radius: 20px;
-      padding: 5px 12px;
-      font-size: 0.75rem; color: var(--green);
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 5px 12px;
+      font-size: 0.75rem; color: #fff; font-weight: 600;
     }
     .badge .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--green);
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
       animation: pulse 1.5s infinite;
     }
-    @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+    .clock {
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px; padding: 5px 12px;
+      font-size: 0.82rem; color: #fff; font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
-    .time-display { font-size: 0.78rem; color: var(--muted); }
+    .date-badge {
+      font-size: 0.72rem; color: rgba(255,255,255,0.75);
+    }
 
     /* Main */
-    main { position: relative; z-index: 1; padding: 30px 40px; max-width: 1400px; margin: 0 auto; }
+    main { padding: 28px 40px; max-width: 1400px; margin: 0 auto; }
+
+    /* Section title */
+    .section-title {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
 
     /* Stat cards */
     .stat-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
       margin-bottom: 24px;
     }
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 22px 24px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, border-color 0.2s;
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
     }
-    .stat-card:hover { transform: translateY(-2px); }
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
     }
-    .stat-card.temp::before { background: linear-gradient(90deg, var(--orange), #fbbf24); }
-    .stat-card.hum::before  { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
-    .stat-card.pres::before { background: linear-gradient(90deg, var(--purple), #ec4899); }
-    .stat-card .glow {
-      position: absolute;
-      top: -30px; right: -30px;
-      width: 100px; height: 100px;
-      border-radius: 50%;
-      filter: blur(40px);
-      opacity: 0.12;
+    .stat-card .stripe {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: 16px 16px 0 0;
     }
-    .stat-card.temp .glow { background: var(--orange); }
-    .stat-card.hum  .glow { background: var(--cyan); }
-    .stat-card.pres .glow { background: var(--purple); }
+    .stat-card .icon-wrap {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 14px;
+    }
+    .stat-card .label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-card .value { font-size: 2.4rem; font-weight: 800; line-height: 1.1; margin: 6px 0 3px; }
+    .stat-card .unit { font-size: 0.78rem; color: var(--muted); }
+    .stat-card .trend {
+      position: absolute; top: 18px; right: 18px;
+      font-size: 0.7rem; font-weight: 600;
+      padding: 3px 8px; border-radius: 20px;
+    }
+    .up   { background: #dcfce7; color: #16a34a; }
+    .down { background: #fee2e2; color: #dc2626; }
+    .neu  { background: #f1f5f9; color: var(--muted); }
 
-    .stat-label {
-      font-size: 0.72rem; font-weight: 600;
-      letter-spacing: 1.5px; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 12px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .stat-value {
-      font-size: 3rem; font-weight: 700;
-      line-height: 1; margin-bottom: 6px;
-    }
-    .stat-card.temp .stat-value { color: var(--orange); }
-    .stat-card.hum  .stat-value { color: var(--cyan); }
-    .stat-card.pres .stat-value { color: var(--purple); }
-    .stat-unit { font-size: 0.8rem; color: var(--muted); }
-    .stat-delta {
-      position: absolute; bottom: 20px; right: 20px;
-      font-size: 0.72rem; color: var(--muted);
-      background: rgba(255,255,255,0.04);
-      border-radius: 6px; padding: 3px 8px;
-    }
+    .s-temp  .stripe { background: linear-gradient(90deg, #ff7043, #fbbf24); }
+    .s-temp  .icon-wrap { background: #fff3e0; }
+    .s-temp  .value { color: #ff7043; }
+    .s-hum   .stripe { background: linear-gradient(90deg, #00bcd4, #4f7cff); }
+    .s-hum   .icon-wrap { background: #e0f7fa; }
+    .s-hum   .value { color: #00bcd4; }
+    .s-pres  .stripe { background: linear-gradient(90deg, #9c27b0, #e91e63); }
+    .s-pres  .icon-wrap { background: #f3e5f5; }
+    .s-pres  .value { color: #9c27b0; }
+    .s-count .stripe { background: linear-gradient(90deg, #22c55e, #06b6d4); }
+    .s-count .icon-wrap { background: #dcfce7; }
+    .s-count .value { color: #22c55e; font-size: 2rem; }
 
     /* Chart grid */
-    .chart-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .chart-grid-bottom {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+    .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .chart-row  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .chart-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px 22px;
+      box-shadow: var(--shadow);
     }
     .chart-header {
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .chart-title { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .chart-sub { font-size: 0.7rem; color: var(--light); margin-top: 2px; }
+    .chip {
+      font-size: 0.68rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .chip-orange { background: #fff3e0; color: #ff7043; }
+    .chip-cyan   { background: #e0f7fa; color: #0097a7; }
+    .chip-purple { background: #f3e5f5; color: #9c27b0; }
+    .chip-blue   { background: #e8eeff; color: #4f7cff; }
+    .chip-green  { background: #dcfce7; color: #16a34a; }
+
+    .mini-stats { display: flex; gap: 18px; margin-bottom: 12px; }
+    .mini-stat  { font-size: 0.72rem; color: var(--muted); }
+    .mini-stat strong { color: var(--text); font-weight: 700; }
+
+    /* Table */
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
       margin-bottom: 16px;
     }
-    .chart-title { font-size: 0.85rem; font-weight: 600; color: var(--text); }
-    .chart-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
-    .chart-tag {
-      font-size: 0.68rem;
-      padding: 3px 10px; border-radius: 20px;
-      font-weight: 600;
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th {
+      text-align: left; padding: 8px 12px;
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--muted); background: var(--bg);
+      border-bottom: 1px solid var(--border);
     }
-    .tag-orange { background: rgba(249,115,22,0.12); color: var(--orange); }
-    .tag-cyan   { background: rgba(6,182,212,0.12);  color: var(--cyan); }
-    .tag-purple { background: rgba(139,92,246,0.12); color: var(--purple); }
-    .tag-blue   { background: rgba(59,130,246,0.12); color: var(--blue); }
-
-    /* Mini stat inside chart */
-    .mini-stats {
-      display: flex; gap: 16px; margin-bottom: 14px;
+    tbody tr { border-bottom: 1px solid var(--bg2); transition: background 0.15s; }
+    tbody tr:hover { background: var(--bg); }
+    tbody td { padding: 10px 12px; color: var(--text); }
+    .pill {
+      display: inline-block; padding: 2px 10px;
+      border-radius: 20px; font-size: 0.7rem; font-weight: 600;
     }
-    .mini-stat { font-size: 0.72rem; color: var(--muted); }
-    .mini-stat span { color: var(--text); font-weight: 600; }
 
-    /* Footer */
+    /* Gauge bars */
+    .gauge-wrap { margin-top: 6px; }
+    .gauge-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.78rem; }
+    .gauge-label { width: 80px; color: var(--muted); font-weight: 600; }
+    .gauge-bar { flex: 1; height: 8px; background: var(--bg2); border-radius: 10px; overflow: hidden; }
+    .gauge-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+    .gauge-val { width: 50px; text-align: right; font-weight: 700; font-size: 0.78rem; }
+
     footer {
-      position: relative; z-index: 1;
-      text-align: center; padding: 20px;
+      text-align: center; padding: 18px;
       font-size: 0.72rem; color: var(--muted);
       border-top: 1px solid var(--border);
-      margin-top: 10px;
+      background: var(--card);
     }
     footer strong { color: var(--blue); }
   </style>
@@ -209,218 +228,372 @@
     </div>
   </div>
   <div class="header-right">
-    <div class="badge"><div class="dot"></div> LIVE</div>
-    <div class="time-display" id="clock">--:--:--</div>
+    <div class="date-badge" id="date-disp"></div>
+    <div class="badge"><div class="dot"></div>LIVE</div>
+    <div class="clock" id="clock">--:--:--</div>
   </div>
 </header>
 
 <main>
+
+  <div class="section-title">📊 실시간 센서 현황</div>
   <div class="stat-grid">
-    <div class="stat-card temp">
-      <div class="glow"></div>
-      <div class="stat-label">🌡 Temperature</div>
-      <div class="stat-value" id="temp-val">--</div>
-      <div class="stat-unit">Celsius</div>
-      <div class="stat-delta" id="temp-time">--</div>
+    <div class="stat-card s-temp">
+      <div class="stripe"></div>
+      <div class="icon-wrap">🌡️</div>
+      <div class="label">Temperature</div>
+      <div class="value" id="temp-val">--</div>
+      <div class="unit">°C · Celsius</div>
+      <div class="trend neu" id="temp-trend">--</div>
     </div>
-    <div class="stat-card hum">
-      <div class="glow"></div>
-      <div class="stat-label">💧 Humidity</div>
-      <div class="stat-value" id="hum-val">--</div>
-      <div class="stat-unit">Percent (%)</div>
-      <div class="stat-delta" id="hum-time">--</div>
+    <div class="stat-card s-hum">
+      <div class="stripe"></div>
+      <div class="icon-wrap">💧</div>
+      <div class="label">Humidity</div>
+      <div class="value" id="hum-val">--</div>
+      <div class="unit">% · Percent</div>
+      <div class="trend neu" id="hum-trend">--</div>
     </div>
-    <div class="stat-card pres">
-      <div class="glow"></div>
-      <div class="stat-label">🌀 Pressure</div>
-      <div class="stat-value" id="pres-val">--</div>
-      <div class="stat-unit">hPa</div>
-      <div class="stat-delta" id="pres-time">--</div>
+    <div class="stat-card s-pres">
+      <div class="stripe"></div>
+      <div class="icon-wrap">🌀</div>
+      <div class="label">Pressure</div>
+      <div class="value" id="pres-val">--</div>
+      <div class="unit">hPa</div>
+      <div class="trend neu" id="pres-trend">--</div>
+    </div>
+    <div class="stat-card s-count">
+      <div class="stripe"></div>
+      <div class="icon-wrap">📦</div>
+      <div class="label">Total Records</div>
+      <div class="value" id="total-val">--</div>
+      <div class="unit">SQLite rows</div>
+      <div class="trend up">+3 / 5s</div>
     </div>
   </div>
 
+  <div class="section-title">📈 차트 분석</div>
   <div class="chart-grid">
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">🌡 Temperature History</div>
-          <div class="chart-sub">Last 20 records · Auto refresh 5s</div>
+          <div class="chart-title">🌡️ Temperature History</div>
+          <div class="chart-sub">최근 20개 기록 · 5초마다 갱신</div>
         </div>
-        <span class="chart-tag tag-orange">°C</span>
+        <span class="chip chip-orange">°C</span>
       </div>
       <div class="mini-stats">
-        <div class="mini-stat">Min <span id="temp-min">--</span>°C</div>
-        <div class="mini-stat">Max <span id="temp-max">--</span>°C</div>
-        <div class="mini-stat">Avg <span id="temp-avg">--</span>°C</div>
+        <div class="mini-stat">Min <strong id="temp-min">--</strong>°C</div>
+        <div class="mini-stat">Max <strong id="temp-max">--</strong>°C</div>
+        <div class="mini-stat">Avg <strong id="temp-avg">--</strong>°C</div>
       </div>
-      <canvas id="tempChart" height="90"></canvas>
+      <canvas id="tempChart" height="85"></canvas>
     </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">🕸️ Sensor Radar</div>
+          <div class="chart-sub">정규화 비교</div>
+        </div>
+        <span class="chip chip-blue">Multi</span>
+      </div>
+      <canvas id="radarChart" height="170"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-row">
     <div class="chart-card">
       <div class="chart-header">
         <div>
           <div class="chart-title">💧 Humidity</div>
-          <div class="chart-sub">Real-time</div>
+          <div class="chart-sub">최근 20개 기록</div>
         </div>
-        <span class="chart-tag tag-cyan">%</span>
+        <span class="chip chip-cyan">%</span>
       </div>
-      <canvas id="humChart" height="160"></canvas>
+      <div class="mini-stats">
+        <div class="mini-stat">Avg <strong id="hum-avg">--</strong>%</div>
+      </div>
+      <canvas id="humChart" height="110"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">🌀 Pressure</div>
+          <div class="chart-sub">최근 20개 기록</div>
+        </div>
+        <span class="chip chip-purple">hPa</span>
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat">Avg <strong id="pres-avg">--</strong>hPa</div>
+      </div>
+      <canvas id="presChart" height="110"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">🌡️ Temp Bar</div>
+          <div class="chart-sub">구간별 분포</div>
+        </div>
+        <span class="chip chip-green">Bar</span>
+      </div>
+      <canvas id="barChart" height="140"></canvas>
     </div>
   </div>
 
-  <div class="chart-grid-bottom">
+  <div class="section-title">⚡ 센서 게이지</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
     <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">🌀 Pressure History</div>
-          <div class="chart-sub">Last 20 records</div>
+      <div class="chart-title" style="margin-bottom:14px;">실시간 게이지</div>
+      <div class="gauge-wrap">
+        <div class="gauge-row">
+          <div class="gauge-label">🌡 Temp</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="g-temp" style="background:linear-gradient(90deg,#ff7043,#fbbf24);width:0%"></div></div>
+          <div class="gauge-val" id="gv-temp" style="color:#ff7043">--°C</div>
         </div>
-        <span class="chart-tag tag-purple">hPa</span>
+        <div class="gauge-row">
+          <div class="gauge-label">💧 Humid</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="g-hum" style="background:linear-gradient(90deg,#00bcd4,#4f7cff);width:0%"></div></div>
+          <div class="gauge-val" id="gv-hum" style="color:#00bcd4">--%</div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label">🌀 Press</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="g-pres" style="background:linear-gradient(90deg,#9c27b0,#e91e63);width:0%"></div></div>
+          <div class="gauge-val" id="gv-pres" style="color:#9c27b0">--hPa</div>
+        </div>
       </div>
-      <canvas id="presChart" height="120"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">📊 All Sensors Overview</div>
-          <div class="chart-sub">Normalized comparison</div>
+      <div class="chart-title" style="margin-bottom:14px;">📡 시스템 정보</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.8rem;">
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">DATABASE</div>
+          <div style="font-weight:700;color:var(--green);">✅ SQLite</div>
         </div>
-        <span class="chart-tag tag-blue">Multi</span>
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">BACKEND</div>
+          <div style="font-weight:700;color:var(--blue);">🐍 Flask</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">CONTAINER</div>
+          <div style="font-weight:700;color:var(--cyan);">🐳 Docker</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">WORKFLOW</div>
+          <div style="font-weight:700;color:var(--purple);">⚡ n8n</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">INTERVAL</div>
+          <div style="font-weight:700;">⏱ 5초</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:12px;">
+          <div style="color:var(--muted);font-size:0.7rem;margin-bottom:4px;">PORT</div>
+          <div style="font-weight:700;">🔌 5000</div>
+        </div>
       </div>
-      <canvas id="radarChart" height="120"></canvas>
     </div>
   </div>
+
+  <div class="section-title">📋 최근 데이터 로그</div>
+  <div class="table-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">최근 저장 기록 (SQLite)</div>
+        <div class="chart-sub">5초마다 자동 갱신</div>
+      </div>
+      <span class="chip chip-green">Live Table</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Sensor</th>
+          <th>Value</th>
+          <th>Unit</th>
+          <th>Recorded At</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="log-table"></tbody>
+    </table>
+  </div>
+
 </main>
 
 <footer>
   Capstone Design 2026 &nbsp;|&nbsp;
   <strong>Docker + docker-compose</strong> &nbsp;|&nbsp;
   Flask + SQLite + n8n + MySQL &nbsp;|&nbsp;
-  학번: 2101080 정진용
+  학번: 2101080 &nbsp; 정진용
 </footer>
 
 <script>
-  // Clock
+  // Clock & Date
   function updateClock() {
-    document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR');
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('ko-KR');
+    document.getElementById('date-disp').textContent = now.toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'short'});
   }
   setInterval(updateClock, 1000); updateClock();
 
   // Chart factory
-  const makeChart = (id, color, type = 'line', opts = {}) => {
+  const makeLineChart = (id, color) => {
     const ctx = document.getElementById(id).getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, color + '40');
-    gradient.addColorStop(1, color + '00');
-
+    const grad = ctx.createLinearGradient(0,0,0,180);
+    grad.addColorStop(0, color+'35'); grad.addColorStop(1, color+'00');
     return new Chart(ctx, {
-      type,
-      data: {
-        labels: [],
-        datasets: [{
-          data: [],
-          borderColor: color,
-          backgroundColor: type === 'line' ? gradient : color + '33',
-          borderWidth: 2,
-          pointRadius: type === 'line' ? 3 : 0,
-          pointBackgroundColor: color,
-          fill: true,
-          tension: 0.4,
-          ...opts.dataset
-        }]
-      },
-      options: {
-        responsive: true,
-        animation: { duration: 400 },
-        plugins: { legend: { display: false } },
-        scales: type === 'line' ? {
-          x: {
-            ticks: { color: '#475569', font: { size: 10 }, maxRotation: 0 },
-            grid: { color: '#0d1424' }
-          },
-          y: {
-            ticks: { color: '#475569', font: { size: 10 } },
-            grid: { color: '#1f2d45' }
-          }
-        } : {},
-        ...opts.options
+      type:'line',
+      data:{ labels:[], datasets:[{ data:[], borderColor:color, backgroundColor:grad, borderWidth:2.5, pointRadius:3.5, pointBackgroundColor:'#fff', pointBorderColor:color, pointBorderWidth:2, fill:true, tension:0.4 }] },
+      options:{ responsive:true, animation:{duration:400}, plugins:{legend:{display:false}},
+        scales:{
+          x:{ ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'#f0f4ff'} },
+          y:{ ticks:{color:'#94a3b8',font:{size:10}}, grid:{color:'#e8eeff'} }
+        }
       }
     });
   };
 
-  const tempChart = makeChart('tempChart', '#f97316');
-  const humChart  = makeChart('humChart',  '#06b6d4');
-  const presChart = makeChart('presChart', '#8b5cf6');
+  const tempChart = makeLineChart('tempChart','#ff7043');
+  const humChart  = makeLineChart('humChart', '#00bcd4');
+  const presChart = makeLineChart('presChart','#9c27b0');
 
-  // Radar chart
-  const radarChart = new Chart(document.getElementById('radarChart'), {
-    type: 'radar',
-    data: {
-      labels: ['Temperature', 'Humidity', 'Pressure'],
-      datasets: [{
-        data: [0, 0, 0],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.15)',
-        borderWidth: 2,
-        pointBackgroundColor: '#3b82f6',
-        pointRadius: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      animation: { duration: 400 },
-      plugins: { legend: { display: false } },
-      scales: {
-        r: {
-          ticks: { color: '#475569', font: { size: 9 }, backdropColor: 'transparent' },
-          grid: { color: '#1f2d45' },
-          pointLabels: { color: '#94a3b8', font: { size: 11 } },
-          min: 0, max: 100
-        }
+  const barChart = new Chart(document.getElementById('barChart'), {
+    type:'bar',
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:'rgba(79,124,255,0.6)', borderColor:'#4f7cff', borderWidth:1.5, borderRadius:6 }] },
+    options:{ responsive:true, animation:{duration:400}, plugins:{legend:{display:false}},
+      scales:{
+        x:{ ticks:{color:'#94a3b8',font:{size:9}}, grid:{display:false} },
+        y:{ ticks:{color:'#94a3b8',font:{size:9}}, grid:{color:'#e8eeff'} }
       }
     }
   });
 
-  function updateLatest() {
-    fetch('/api/latest').then(r => r.json()).then(d => {
-      if (d.temperature) document.getElementById('temp-val').textContent = d.temperature.value;
-      if (d.humidity)    document.getElementById('hum-val').textContent  = d.humidity.value;
-      if (d.pressure)    document.getElementById('pres-val').textContent = d.pressure.value;
+  const radarChart = new Chart(document.getElementById('radarChart'), {
+    type:'radar',
+    data:{
+      labels:['Temp','Humidity','Pressure'],
+      datasets:[{
+        data:[0,0,0], label:'Sensors',
+        borderColor:'#4f7cff', backgroundColor:'rgba(79,124,255,0.15)',
+        borderWidth:2, pointBackgroundColor:'#4f7cff', pointRadius:5
+      }]
+    },
+    options:{ responsive:true, animation:{duration:400},
+      plugins:{ legend:{display:false} },
+      scales:{ r:{
+        ticks:{color:'#94a3b8',font:{size:9},backdropColor:'transparent'},
+        grid:{color:'#e8eeff'}, angleLines:{color:'#dde3f5'},
+        pointLabels:{color:'#475569',font:{size:12,weight:'600'}},
+        min:0, max:100
+      }}
+    }
+  });
 
-      // Radar normalized
-      const t = d.temperature ? ((d.temperature.value - 15) / 25 * 100) : 0;
-      const h = d.humidity    ? d.humidity.value : 0;
-      const p = d.pressure    ? ((d.pressure.value - 995) / 35 * 100) : 0;
-      radarChart.data.datasets[0].data = [
-        Math.max(0, Math.min(100, t)),
-        Math.max(0, Math.min(100, h)),
-        Math.max(0, Math.min(100, p))
+  let prevTemp=null, prevHum=null, prevPres=null;
+
+  function trendBadge(cur, prev) {
+    if (prev===null) return ['neu','--'];
+    const diff = (cur-prev).toFixed(1);
+    if (diff>0) return ['up', '▲ '+diff];
+    if (diff<0) return ['down','▼ '+Math.abs(diff)];
+    return ['neu','→ 0'];
+  }
+
+  function updateLatest() {
+    fetch('/api/latest').then(r=>r.json()).then(d=>{
+      if(d.temperature){
+        const v=d.temperature.value;
+        document.getElementById('temp-val').textContent=v;
+        const [cls,txt]=trendBadge(v,prevTemp);
+        const el=document.getElementById('temp-trend');
+        el.textContent=txt; el.className='trend '+cls;
+        document.getElementById('g-temp').style.width=((v-15)/25*100)+'%';
+        document.getElementById('gv-temp').textContent=v+'°C';
+        prevTemp=v;
+      }
+      if(d.humidity){
+        const v=d.humidity.value;
+        document.getElementById('hum-val').textContent=v;
+        const [cls,txt]=trendBadge(v,prevHum);
+        const el=document.getElementById('hum-trend');
+        el.textContent=txt; el.className='trend '+cls;
+        document.getElementById('g-hum').style.width=v+'%';
+        document.getElementById('gv-hum').textContent=v+'%';
+        prevHum=v;
+      }
+      if(d.pressure){
+        const v=d.pressure.value;
+        document.getElementById('pres-val').textContent=v;
+        const [cls,txt]=trendBadge(v,prevPres);
+        const el=document.getElementById('pres-trend');
+        el.textContent=txt; el.className='trend '+cls;
+        document.getElementById('g-pres').style.width=((v-995)/35*100)+'%';
+        document.getElementById('gv-pres').textContent=v+'hPa';
+        prevPres=v;
+      }
+    });
+  }
+
+  function updateCharts() {
+    fetch('/api/data').then(r=>r.json()).then(d=>{
+      [['temperature',tempChart,'temp'],['humidity',humChart,'hum'],['pressure',presChart,'pres']].forEach(([k,chart,pre])=>{
+        if(!d[k]) return;
+        chart.data.labels=d[k].times;
+        chart.data.datasets[0].data=d[k].values;
+        chart.update();
+        const vals=d[k].values;
+        const avg=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+        const el=document.getElementById(pre+'-avg');
+        if(el) el.textContent=avg;
+        if(pre==='temp'){
+          document.getElementById('temp-min').textContent=Math.min(...vals).toFixed(1);
+          document.getElementById('temp-max').textContent=Math.max(...vals).toFixed(1);
+          // bar chart (last 10)
+          const last10 = d[k].values.slice(-10);
+          const last10t = d[k].times.slice(-10);
+          barChart.data.labels=last10t;
+          barChart.data.datasets[0].data=last10;
+          barChart.update();
+        }
+      });
+      // radar normalized
+      const t=d.temperature?((d.temperature.values.at(-1)-15)/25*100):0;
+      const h=d.humidity?d.humidity.values.at(-1):0;
+      const p=d.pressure?((d.pressure.values.at(-1)-995)/35*100):0;
+      radarChart.data.datasets[0].data=[
+        Math.max(0,Math.min(100,t)),
+        Math.max(0,Math.min(100,h)),
+        Math.max(0,Math.min(100,p))
       ];
       radarChart.update();
     });
   }
 
-  function updateCharts() {
-    fetch('/api/data').then(r => r.json()).then(d => {
-      [[d.temperature, tempChart, 'temp'], [d.humidity, humChart, 'hum'], [d.pressure, presChart, 'pres']]
-        .forEach(([data, chart, key]) => {
-          if (!data) return;
-          chart.data.labels = data.times;
-          chart.data.datasets[0].data = data.values;
-          chart.update();
-
-          if (key === 'temp') {
-            const vals = data.values;
-            document.getElementById('temp-min').textContent = Math.min(...vals).toFixed(1);
-            document.getElementById('temp-max').textContent = Math.max(...vals).toFixed(1);
-            document.getElementById('temp-avg').textContent = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
-          }
-        });
+  function updateTable() {
+    fetch('/api/table').then(r=>r.json()).then(rows=>{
+      document.getElementById('total-val').textContent=rows.total;
+      const sensorColor={temperature:'chip-orange',humidity:'chip-cyan',pressure:'chip-purple'};
+      const tbody=document.getElementById('log-table');
+      tbody.innerHTML=rows.recent.map(r=>{
+        const chip=sensorColor[r.sensor_name]||'chip-blue';
+        const status=r.value>30?'<span class="pill" style="background:#fee2e2;color:#dc2626">High</span>':
+                      r.value<22?'<span class="pill" style="background:#dbeafe;color:#1d4ed8">Low</span>':
+                      '<span class="pill" style="background:#dcfce7;color:#16a34a">Normal</span>';
+        return `<tr>
+          <td style="color:var(--muted)">${r.id}</td>
+          <td><span class="pill ${chip}">${r.sensor_name}</span></td>
+          <td style="font-weight:700">${r.value}</td>
+          <td style="color:var(--muted)">${r.unit}</td>
+          <td style="color:var(--muted);font-size:0.75rem">${r.recorded_at}</td>
+          <td>${status}</td>
+        </tr>`;
+      }).join('');
     });
   }
 
-  updateLatest(); updateCharts();
+  updateLatest(); updateCharts(); updateTable();
   setInterval(updateLatest, 3000);
   setInterval(updateCharts, 5000);
+  setInterval(updateTable, 5000);
 </script>
 </body>
 </html>

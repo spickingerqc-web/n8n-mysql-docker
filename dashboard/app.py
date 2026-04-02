@@ -78,6 +78,17 @@ def get_latest():
     conn.close()
     return jsonify(result)
 
+@app.route("/api/table")
+def get_table():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM sensor_data")
+    total = c.fetchone()[0]
+    c.execute("SELECT id, sensor_name, value, unit, recorded_at FROM sensor_data ORDER BY id DESC LIMIT 15")
+    rows = [{"id": r[0], "sensor_name": r[1], "value": r[2], "unit": r[3], "recorded_at": r[4]} for r in c.fetchall()]
+    conn.close()
+    return jsonify({"total": total, "recent": rows})
+
 if __name__ == "__main__":
     init_db()
     t = threading.Thread(target=insert_sensor_data, daemon=True)
