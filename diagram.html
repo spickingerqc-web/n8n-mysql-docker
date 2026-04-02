@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>System Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    p {
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-bottom: 36px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(79,124,255,0.12);
+      padding: 40px 50px;
+      max-width: 900px;
+      width: 100%;
+    }
+    footer {
+      margin-top: 28px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    footer strong { color: #4f7cff; }
+  </style>
+</head>
+<body>
+  <h1>🐳 System Architecture</h1>
+  <p>Docker + docker-compose · n8n · MySQL · Flask · SQLite</p>
+
+  <div class="card">
+    <div class="mermaid">
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#4f7cff',
+  'primaryTextColor': '#fff',
+  'primaryBorderColor': '#3b6be0',
+  'lineColor': '#94a3b8',
+  'secondaryColor': '#f0f4ff',
+  'tertiaryColor': '#e8eeff',
+  'background': '#ffffff',
+  'fontSize': '15px'
+}}}%%
+
+flowchart TD
+    subgraph DC["🐳 Docker Compose"]
+        direction TB
+
+        subgraph SVC1["⚡ n8n Service  (port 5678)"]
+            N8N["🔄 n8n\nWorkflow Engine"]
+            TRIG["⏰ Schedule Trigger\n(1분마다 실행)"]
+            SET["📝 Set Node\n온도 랜덤 생성"]
+            INS["💾 MySQL Insert\nsensor_data 테이블"]
+            TRIG --> SET --> INS
+        end
+
+        subgraph SVC2["🗄️ MySQL Service  (port 3306)"]
+            MYSQL["🐬 MySQL 8.0\nn8n_db"]
+            T1["📋 sensor_data\n(온도·습도·기압)"]
+            T2["📋 workflow_log"]
+            MYSQL --> T1
+            MYSQL --> T2
+        end
+
+        subgraph SVC3["📊 Dashboard Service  (port 5000)"]
+            FLASK["🐍 Flask\nWeb Server"]
+            SQLITE["🗃️ SQLite\nsensor.db"]
+            UI["🖥️ Browser Dashboard\n실시간 차트 + 테이블"]
+            FLASK -- "READ/WRITE" --> SQLITE
+            FLASK --> UI
+        end
+
+        N8N --> INS
+        INS --> MYSQL
+        FLASK -- "5초마다 생성" --> SQLITE
+
+        VOL1[("💿 mysql_data\nVolume")]
+        VOL2[("💿 n8n_data\nVolume")]
+        VOL3[("💿 sqlite_data\nVolume")]
+
+        MYSQL -. "persistent" .-> VOL1
+        N8N   -. "persistent" .-> VOL2
+        SQLITE -. "persistent" .-> VOL3
+    end
+
+    USER["👤 User\nBrowser"]
+    GIT["📦 GitHub\nspickingerqc-web/n8n-mysql-docker"]
+
+    USER -- "http://127.0.0.1:5678" --> SVC1
+    USER -- "http://127.0.0.1:5000" --> SVC3
+    DC   -. "git push" .-> GIT
+
+    style DC   fill:#f8faff,stroke:#4f7cff,stroke-width:2px,color:#1e293b
+    style SVC1 fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e293b
+    style SVC2 fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#1e293b
+    style SVC3 fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#1e293b
+    style USER fill:#f3e8ff,stroke:#9c27b0,stroke-width:1.5px,color:#1e293b
+    style GIT  fill:#1e293b,stroke:#475569,stroke-width:1.5px,color:#fff
+    </div>
+  </div>
+
+  <footer>
+    Capstone Design 2026 &nbsp;|&nbsp;
+    학번: 2101080 &nbsp; 정진용 &nbsp;|&nbsp;
+    <strong>Docker + n8n + MySQL + SQLite</strong>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+  </script>
+</body>
+</html>
