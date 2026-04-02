@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #1e3a5f, #0f172a);
+      padding: 20px 40px;
+      border-bottom: 1px solid #1e40af;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    header h1 { font-size: 1.6rem; color: #60a5fa; }
+    header span { font-size: 0.85rem; color: #64748b; }
+    .cards {
+      display: flex;
+      gap: 20px;
+      padding: 30px 40px 10px;
+    }
+    .card {
+      flex: 1;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px 24px;
+      border: 1px solid #334155;
+    }
+    .card .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .card .val { font-size: 2.4rem; font-weight: bold; margin: 8px 0 4px; }
+    .card .unit { font-size: 0.85rem; color: #94a3b8; }
+    .temp .val { color: #f97316; }
+    .hum .val  { color: #38bdf8; }
+    .pres .val { color: #a78bfa; }
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px 40px;
+    }
+    .chart-box {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #334155;
+    }
+    .chart-box.wide { grid-column: span 2; }
+    .chart-box h3 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 14px; }
+    .dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 6px;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #334155;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>&#127981; IoT Sensor Dashboard</h1>
+      <span>SQLite + Flask + Docker &nbsp;|&nbsp; <span class="dot" style="background:#22c55e"></span>Live</span>
+    </div>
+  </header>
+
+  <div class="cards">
+    <div class="card temp">
+      <div class="label">&#127777; Temperature</div>
+      <div class="val" id="temp-val">--</div>
+      <div class="unit">celsius</div>
+    </div>
+    <div class="card hum">
+      <div class="label">&#128167; Humidity</div>
+      <div class="val" id="hum-val">--</div>
+      <div class="unit">percent</div>
+    </div>
+    <div class="card pres">
+      <div class="label">&#129415; Pressure</div>
+      <div class="val" id="pres-val">--</div>
+      <div class="unit">hPa</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-box wide">
+      <h3>&#127777; Temperature History</h3>
+      <canvas id="tempChart" height="80"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>&#128167; Humidity History</h3>
+      <canvas id="humChart" height="120"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>&#129415; Pressure History</h3>
+      <canvas id="presChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <footer>Docker + docker-compose | Flask + SQLite | Capstone Design 2026</footer>
+
+  <script>
+    const chartOpts = (color) => ({
+      responsive: true,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+        y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } }
+      }
+    });
+
+    const makeChart = (id, color) => new Chart(document.getElementById(id), {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          data: [],
+          borderColor: color,
+          backgroundColor: color + '22',
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: chartOpts(color)
+    });
+
+    const tempChart = makeChart('tempChart', '#f97316');
+    const humChart  = makeChart('humChart',  '#38bdf8');
+    const presChart = makeChart('presChart', '#a78bfa');
+
+    function updateLatest() {
+      fetch('/api/latest').then(r => r.json()).then(d => {
+        if (d.temperature) document.getElementById('temp-val').textContent = d.temperature.value;
+        if (d.humidity)    document.getElementById('hum-val').textContent  = d.humidity.value;
+        if (d.pressure)    document.getElementById('pres-val').textContent = d.pressure.value;
+      });
+    }
+
+    function updateCharts() {
+      fetch('/api/data').then(r => r.json()).then(d => {
+        [['temperature', tempChart], ['humidity', humChart], ['pressure', presChart]].forEach(([key, chart]) => {
+          if (d[key]) {
+            chart.data.labels = d[key].times;
+            chart.data.datasets[0].data = d[key].values;
+            chart.update();
+          }
+        });
+      });
+    }
+
+    updateLatest(); updateCharts();
+    setInterval(updateLatest, 3000);
+    setInterval(updateCharts, 5000);
+  </script>
+</body>
+</html>

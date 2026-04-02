@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: n8n_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-n8n_db}
+      MYSQL_USER: ${MYSQL_USER:-n8n_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-n8n_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - n8n_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_app
+    restart: unless-stopped
+    environment:
+      # n8n 기본 설정
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://${N8N_HOST:-localhost}:5678/
+
+      # MySQL을 n8n 백엔드 DB로 사용
+      DB_TYPE: mysqldb
+      DB_MYSQLDB_HOST: mysql
+      DB_MYSQLDB_PORT: 3306
+      DB_MYSQLDB_DATABASE: ${MYSQL_DATABASE:-n8n_db}
+      DB_MYSQLDB_USER: ${MYSQL_USER:-n8n_user}
+      DB_MYSQLDB_PASSWORD: ${MYSQL_PASSWORD:-n8n_password}
+
+      # 보안 설정
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-admin1234}
+
+      # 타임존
+      GENERIC_TIMEZONE: Asia/Seoul
+      TZ: Asia/Seoul
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  dashboard:
+    build: ./dashboard
+    container_name: sqlite_dashboard
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - sqlite_data:/data
+    networks:
+      - n8n_network
+
+volumes:
+  mysql_data:
+    driver: local
+  n8n_data:
+    driver: local
+  sqlite_data:
+    driver: local
+
+networks:
+  n8n_network:
+    driver: bridge
