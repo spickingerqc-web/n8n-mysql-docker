@@ -1,0 +1,43 @@
+===== GitHub Repository Info =====
+
+Repository URL : https://github.com/spickingerqc-web/n8n-mysql-docker
+Branch         : main
+Commit         : 98dc046
+
+===== Project Structure =====
+
+n8n-mysql-docker/
+├── docker-compose.yml       # Docker Compose 설정 (MySQL + n8n + SQLite Dashboard)
+├── init.sql                 # MySQL 초기 테이블 생성 스크립트
+├── README.md                # 프로젝트 설명
+└── dashboard/
+    ├── Dockerfile           # Flask 대시보드 Docker 이미지
+    ├── app.py               # Flask 앱 (SQLite 연동)
+    └── templates/
+        └── index.html       # 실시간 센서 대시보드 UI
+
+===== Services =====
+
+1. MySQL (port 3306)
+   - n8n 백엔드 DB
+   - sensor_data 테이블에 온도 데이터 저장
+
+2. n8n (port 5678)
+   - Schedule Trigger → MySQL Insert 워크플로우
+   - 1분마다 자동으로 온도 데이터 저장
+   - 접속: http://127.0.0.1:5678
+
+3. SQLite Dashboard (port 5000)
+   - Flask + SQLite 기반 실시간 대시보드
+   - 온도/습도/기압 차트 시각화
+   - 5초마다 자동 업데이트
+   - 접속: http://127.0.0.1:5000
+
+===== How to Run =====
+
+  docker-compose up -d
+
+===== Student Info =====
+
+이름: 정진용
+학번: 2101080
